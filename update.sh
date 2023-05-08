@@ -23,25 +23,25 @@ function get-semver(){
     fi
     case $type in
         major)
-            echo $major
+            echo "$major"
             ;;
         minor)
-            echo $minor
+            echo "$minor"
             ;;
         patch)
-            echo $patch
+            echo "$patch"
             ;;
     esac
 }
 
-stableOnlineVersionMajor=$(get-semver ${stable_online_version} major)
-stableOnlineVersionMinor=$(get-semver ${stable_online_version} minor)
-experimentalOnlineVersionMajor=$(get-semver ${experimental_online_version} major)
-experimentalOnlineVersionMinor=$(get-semver ${experimental_online_version} minor)
-stableCurrentVersionMajor=$(get-semver ${stable_current_version} major)
-stableCurrentVersionMinor=$(get-semver ${stable_current_version} minor)
-latestCurrentVersionMajor=$(get-semver ${latest_current_version} major)
-latestCurrentVersionMinor=$(get-semver ${latest_current_version} minor)
+stableOnlineVersionMajor=$(get-semver "${stable_online_version}" major)
+stableOnlineVersionMinor=$(get-semver "${stable_online_version}" minor)
+experimentalOnlineVersionMajor=$(get-semver "${experimental_online_version}" major)
+experimentalOnlineVersionMinor=$(get-semver "${experimental_online_version}" minor)
+stableCurrentVersionMajor=$(get-semver "${stable_current_version}" major)
+stableCurrentVersionMinor=$(get-semver "${stable_current_version}" minor)
+latestCurrentVersionMajor=$(get-semver "${latest_current_version}" major)
+latestCurrentVersionMinor=$(get-semver "${latest_current_version}" minor)
 
 stableOnlineVersionShort=$stableOnlineVersionMajor.$stableOnlineVersionMinor
 experimentalOnlineVersionShort=$experimentalOnlineVersionMajor.$experimentalOnlineVersionMinor
@@ -55,33 +55,33 @@ tmpfile=$(mktemp)
 
 # Remove latest tag
 cp buildinfo.json "$tmpfile"
-jq --arg latest_current_version $latest_current_version 'with_entries(if .key == $latest_current_version then .value.tags |= . - ["latest"] else . end)' "$tmpfile" > buildinfo.json
+jq --arg latest_current_version "$latest_current_version" 'with_entries(if .key == $latest_current_version then .value.tags |= . - ["latest"] else . end)' "$tmpfile" > buildinfo.json
 rm -f -- "$tmpfile"
 
 # Update tag by stable
 cp buildinfo.json "$tmpfile"
-if [[ $stableOnlineVersionShort == $stableCurrentVersionShort ]]; then
-    jq --arg stable_current_version $stable_current_version --arg stable_online_version $stable_online_version --arg sha256 $stable_sha256 'with_entries(if .key == $stable_current_version then .key |= $stable_online_version | .value.sha256 |= $sha256 | .value.tags |= . - [$stable_current_version] + [$stable_online_version] else . end)' "$tmpfile" > buildinfo.json
+if [[ $stableOnlineVersionShort == "$stableCurrentVersionShort" ]]; then
+    jq --arg stable_current_version "$stable_current_version" --arg stable_online_version "$stable_online_version" --arg sha256 "$stable_sha256" 'with_entries(if .key == $stable_current_version then .key |= $stable_online_version | .value.sha256 |= $sha256 | .value.tags |= . - [$stable_current_version] + [$stable_online_version] else . end)' "$tmpfile" > buildinfo.json
 else
-    jq --arg stable_current_version $stable_current_version --arg stable_online_version $stable_online_version --arg sha256 $stable_sha256 --arg stableOnlineVersionShort $stableOnlineVersionShort --arg stableOnlineVersionMajor $stableOnlineVersionMajor 'with_entries(if .key == $stable_current_version then .value.tags |= . - ["latest","stable",$stableOnlineVersionMajor] else . end) | to_entries | . + [{ key: $stable_online_version, value: { sha256: $sha256, tags: ["latest","stable",$stableOnlineVersionMajor,$stableOnlineVersionShort,$stable_online_version]}}] | from_entries' "$tmpfile" > buildinfo.json
+    jq --arg stable_current_version "$stable_current_version" --arg stable_online_version "$stable_online_version" --arg sha256 "$stable_sha256" --arg stableOnlineVersionShort "$stableOnlineVersionShort" --arg stableOnlineVersionMajor "$stableOnlineVersionMajor" 'with_entries(if .key == $stable_current_version then .value.tags |= . - ["latest","stable",$stableOnlineVersionMajor] else . end) | to_entries | . + [{ key: $stable_online_version, value: { sha256: $sha256, tags: ["latest","stable",$stableOnlineVersionMajor,$stableOnlineVersionShort,$stable_online_version]}}] | from_entries' "$tmpfile" > buildinfo.json
 fi
 rm -f -- "$tmpfile"
 
 # Update tag by latest
 cp buildinfo.json "$tmpfile"
-if [[ $experimental_online_version != $stable_online_version ]]; then
-    if [[ $stableOnlineVersionShort == $experimentalOnlineVersionShort ]]; then
-        jq --arg experimental_online_version $experimental_online_version --arg stable_online_version $stable_online_version --arg sha256 $experimental_sha256 'with_entries(if .key == $stable_online_version then .value.tags |= . - ["latest"] else . end) | to_entries | . + [{ key: $experimental_online_version, value: { sha256: $sha256, tags: ["latest", $experimental_online_version]}}] | from_entries' "$tmpfile" > buildinfo.json
+if [[ $experimental_online_version != "$stable_online_version" ]]; then
+    if [[ $stableOnlineVersionShort == "$experimentalOnlineVersionShort" ]]; then
+        jq --arg experimental_online_version "$experimental_online_version" --arg stable_online_version "$stable_online_version" --arg sha256 "$experimental_sha256" 'with_entries(if .key == $stable_online_version then .value.tags |= . - ["latest"] else . end) | to_entries | . + [{ key: $experimental_online_version, value: { sha256: $sha256, tags: ["latest", $experimental_online_version]}}] | from_entries' "$tmpfile" > buildinfo.json
     else
-        jq --arg experimental_online_version $experimental_online_version --arg stable_online_version $stable_online_version --arg sha256 $experimental_sha256 --arg experimentalOnlineVersionShort   $experimentalOnlineVersionShort --arg experimentalOnlineVersionMajor $experimentalOnlineVersionMajor 'with_entries(if .key == $stable_online_version then .value.tags |= . - ["latest"] else . end) | to_entries | . + [{ key: $experimental_online_version, value: { sha256: $sha256, tags: ["latest",$experimentalOnlineVersionMajor,$experimentalOnlineVersionShort,$experimental_online_version]}}] | from_entries' "$tmpfile" > buildinfo.json
+        jq --arg experimental_online_version "$experimental_online_version" --arg stable_online_version "$stable_online_version" --arg sha256 "$experimental_sha256" --arg experimentalOnlineVersionShort   "$experimentalOnlineVersionShort" --arg experimentalOnlineVersionMajor "$experimentalOnlineVersionMajor" 'with_entries(if .key == $stable_online_version then .value.tags |= . - ["latest"] else . end) | to_entries | . + [{ key: $experimental_online_version, value: { sha256: $sha256, tags: ["latest",$experimentalOnlineVersionMajor,$experimentalOnlineVersionShort,$experimental_online_version]}}] | from_entries' "$tmpfile" > buildinfo.json
     fi
 fi
 rm -f -- "$tmpfile"
 
-readme_tags=$(cat buildinfo.json | jq --sort-keys 'keys[]' | tac | (while read line
+readme_tags=$(jq --sort-keys 'keys[]' buildinfo.json | tac | (while read -r line
 do
-  tags="$tags\n* "$(cat buildinfo.json | jq --sort-keys ".$line.tags | sort | .[]"  | sed 's/"/`/g' | sed ':a; /$/N; s/\n/, /; ta')
-done && echo $tags"\n"))
+  tags="$tags\n* "$(jq --sort-keys ".$line.tags | sort | .[]" buildinfo.json | sed 's/"/`/g' | sed ':a; /$/N; s/\n/, /; ta')
+done && printf "%s\n\n" "$tags"))
 
 perl -i -0777 -pe "s/<!-- start autogeneration tags -->.+<!-- end autogeneration tags -->/<!-- start autogeneration tags -->$readme_tags<!-- end autogeneration tags -->/s" README.md
 
