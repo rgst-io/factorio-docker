@@ -1,5 +1,9 @@
-FROM frolvlad/alpine-glibc:alpine-3.17
+FROM golang:1.20-alpine3.17 as factocord3-build
+ENV GOBIN=/opt/factocord3/artifacts
+RUN go install github.com/maxsupermanhd/FactoCord-3.0@latest
+RUN go install github.com/hjson/hjson-go/v4/hjson-cli@latest
 
+FROM frolvlad/alpine-glibc:alpine-3.17
 LABEL maintainer="https://github.com/rgst-io/factorio-docker"
 
 ARG USER=factorio
@@ -25,6 +29,8 @@ ENV PORT=34197 \
     SCRIPTOUTPUT=/factorio/script-output \
     PUID="$PUID" \
     PGID="$PGID"
+
+COPY --from=factocord3-build /opt/factocord3/artifacts/* /usr/local/bin/
 
 SHELL ["/bin/ash", "-eo", "pipefail", "-c"]
 RUN set -ox pipefail \
