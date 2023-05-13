@@ -2,8 +2,7 @@
 
 [中文](./README_zh_CN.md)
 
-<!-- start autogeneration tags -->
-<!-- end autogeneration tags -->
+<!-- start autogeneration tags --><!-- end autogeneration tags -->
 
 ## Tag descriptions
 
