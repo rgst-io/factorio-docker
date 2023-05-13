@@ -1,6 +1,6 @@
-FROM frolvlad/alpine-glibc:alpine-3.12
+FROM frolvlad/alpine-glibc:alpine-3.17
 
-LABEL maintainer="https://github.com/factoriotools/factorio-docker"
+LABEL maintainer="https://github.com/rgst-io/factorio-docker"
 
 ARG USER=factorio
 ARG GROUP=factorio
@@ -29,12 +29,12 @@ ENV PORT=34197 \
 SHELL ["/bin/ash", "-eo", "pipefail", "-c"]
 RUN set -ox pipefail \
     && if [[ "${VERSION}" == "" ]]; then \
-        echo "build-arg VERSION is required" \
-        && exit 1; \
+    echo "build-arg VERSION is required" \
+    && exit 1; \
     fi \
     && if [[ "${SHA256}" == "" ]]; then \
-        echo "build-arg SHA256 is required" \
-        && exit 1; \
+    echo "build-arg SHA256 is required" \
+    && exit 1; \
     fi \
     && archive="/tmp/factorio_headless_x64_$VERSION.tar.xz" \
     && mkdir -p /opt /factorio \
