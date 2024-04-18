@@ -1,9 +1,9 @@
-FROM golang:1.20-alpine3.17 as factocord3-build
+FROM golang:1.22-alpine3.19 as factocord3-build
 ENV GOBIN=/opt/factocord3/artifacts
 RUN go install github.com/maxsupermanhd/FactoCord-3.0@latest
 RUN go install github.com/hjson/hjson-go/v4/hjson-cli@latest
 
-FROM frolvlad/alpine-glibc:alpine-3.17
+FROM frolvlad/alpine-glibc:alpine-3.19
 LABEL maintainer="https://github.com/rgst-io/factorio-docker"
 
 ARG USER=factorio
