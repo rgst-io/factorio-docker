@@ -11,8 +11,8 @@ def build_dockerfile(sha256, version, tags):
     build_dir = tempfile.mktemp()
     shutil.copytree("docker", build_dir)
 
-    build_command = ["docker", "build", "--build-arg", f"VERSION={version}",
-                     "--build-arg", f"SHA256={sha256}", "."]
+    build_command = ["docker", "buildx", "build", "--build-arg", f"VERSION={version}",
+                     "--build-arg", f"SHA256={sha256}", "--load", "."]
     for tag in tags:
         build_command.extend(["-t", f"ghcr.io/rgst-io/factorio-docker:{tag}"])
     try:

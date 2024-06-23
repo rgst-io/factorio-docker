@@ -49,6 +49,7 @@ if [[ ${UPDATE_MODS_ON_START:-} == "true" ]]; then
   ./docker-update-mods.sh
 fi
 
+EXEC=""
 if [[ $(id -u) = 0 ]]; then
   # Update the User and Group ID based on the PUID/PGID variables
   usermod -o -u "$PUID" factorio
@@ -56,9 +57,7 @@ if [[ $(id -u) = 0 ]]; then
   # Take ownership of factorio data if running as root
   chown -R factorio:factorio "$FACTORIO_VOL"
   # Drop to the factorio user
-  SU_EXEC="su-exec factorio"
-else
-  SU_EXEC=""
+  EXEC="runuser -u factorio -g factorio --"
 fi
 
 sed -i '/write-data=/c\write-data=\/factorio/' /opt/factorio/config/config.ini
@@ -77,7 +76,7 @@ if [[ $GENERATE_NEW_SAVE == true ]]; then
   if [[ -f "$SAVES/$SAVE_NAME.zip" ]]; then
     echo "Map $SAVES/$SAVE_NAME.zip already exists, skipping map generation"
   else
-    $SU_EXEC "$BINARY" \
+    $EXEC "$BINARY" \
       --create "$SAVES/$SAVE_NAME.zip" \
       --map-gen-settings "$CONFIG/map-gen-settings.json" \
       --map-settings "$CONFIG/map-settings.json"
@@ -167,7 +166,7 @@ if [[ "$FACTOCORD_ENABLED" == "true" ]]; then
   if [[ ! -e "$FACTOCORD_CONFIG_PATH" ]]; then
     # Create the config file
     echo "Creating Factocord config file..." >&2
-    wget -qO "$FACTOCORD_CONFIG_PATH" https://github.com/maxsupermanhd/FactoCord-3.0/raw/master/config-example.json5
+    curl -f -o "$FACTOCORD_CONFIG_PATH" https://github.com/maxsupermanhd/FactoCord-3.0/raw/master/config-example.json5
   fi
 
   # We need to convert it from json5 into JSON so we can
@@ -199,8 +198,8 @@ if [[ "$FACTOCORD_ENABLED" == "true" ]]; then
 
   echo "Starting Factorio through Factocord3..." >&2
   cd "$FACTORIO_VOL"
-  exec $SU_EXEC FactoCord-3.0 "$@"
+  exec $EXEC FactoCord-3.0 "$@"
 fi
 
 # shellcheck disable=SC2086
-exec $SU_EXEC "$BINARY" "${FLAGS[@]}" "$@"
+exec $EXEC "$BINARY" "${FLAGS[@]}" "$@"

@@ -1,10 +1,10 @@
-FROM golang:1.22-alpine3.19 as factocord3-build
+FROM golang:1.22-bookworm as factocord3-build
 ENV GOBIN=/opt/factocord3/artifacts
 RUN go install github.com/maxsupermanhd/FactoCord-3.0@latest
 RUN go install github.com/hjson/hjson-go/v4/hjson-cli@latest
 
-FROM frolvlad/alpine-glibc:alpine-3.19
-LABEL maintainer="https://github.com/rgst-io/factorio-docker"
+FROM debian:bookworm-slim
+LABEL maintainer="https://github.com/factoriotools/factorio-docker"
 
 ARG USER=factorio
 ARG GROUP=factorio
@@ -15,6 +15,8 @@ ARG PGID=845
 ARG VERSION
 ARG SHA256
 
+LABEL factorio.version=${VERSION}
+
 # number of retries that curl will use when pulling the headless server tarball
 ARG CURL_RETRIES=8
 
@@ -23,6 +25,7 @@ ENV PORT=34197 \
     VERSION=${VERSION} \
     SHA256=${SHA256} \
     SAVES=/factorio/saves \
+    PRESET="$PRESET" \
     CONFIG=/factorio/config \
     MODS=/factorio/mods \
     SCENARIOS=/factorio/scenarios \
@@ -30,9 +33,10 @@ ENV PORT=34197 \
     PUID="$PUID" \
     PGID="$PGID"
 
+SHELL ["/bin/bash", "-eo", "pipefail", "-c"]
+
 COPY --from=factocord3-build /opt/factocord3/artifacts/* /usr/local/bin/
 
-SHELL ["/bin/ash", "-eo", "pipefail", "-c"]
 RUN set -ox pipefail \
     && if [[ "${VERSION}" == "" ]]; then \
     echo "build-arg VERSION is required" \
@@ -44,18 +48,20 @@ RUN set -ox pipefail \
     fi \
     && archive="/tmp/factorio_headless_x64_$VERSION.tar.xz" \
     && mkdir -p /opt /factorio \
-    && apk add --update --no-cache --no-progress bash binutils curl file gettext jq libintl pwgen shadow su-exec \
+    && apt-get -q update \
+    && DEBIAN_FRONTEND=noninteractive apt-get -qy install ca-certificates curl jq pwgen xz-utils procps gettext-base --no-install-recommends \
     && curl -sSL "https://www.factorio.com/get-download/$VERSION/headless/linux64" -o "$archive" --retry $CURL_RETRIES\
     && echo "$SHA256  $archive" | sha256sum -c \
     || (sha256sum "$archive" && file "$archive" && exit 1) \
     && tar xf "$archive" --directory /opt \
     && chmod ugo=rwx /opt/factorio \
     && rm "$archive" \
+    && rm -rf /var/lib/apt/lists/* \
     && ln -s "$SCENARIOS" /opt/factorio/scenarios \
     && ln -s "$SAVES" /opt/factorio/saves \
     && mkdir -p /opt/factorio/config/ \
-    && addgroup -g "$PGID" -S "$GROUP" \
-    && adduser -u "$PUID" -G "$GROUP" -s /bin/sh -SDH "$USER" \
+    && addgroup --system --gid "$PGID" "$GROUP" \
+    && adduser --system --uid "$PUID" --gid "$PGID" --no-create-home --disabled-password --shell /bin/sh "$USER" \
     && chown -R "$USER":"$GROUP" /opt/factorio /factorio
 
 COPY files/*.sh /
